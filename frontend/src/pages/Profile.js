@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FiUser, FiMail, FiPhone, FiBriefcase, FiCheckCircle } from "react-icons/fi";
+import { DEPARTMENTS } from "../constants/departments";
 
 export default function Profile() {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -139,13 +140,17 @@ export default function Profile() {
                                         <label className="form-label small fw-bold text-secondary text-uppercase tracking-wider">Department / Role</label>
                                         <div className="input-group">
                                             <span className="input-group-text bg-light border-0"><FiBriefcase className="text-muted" /></span>
-                                            <input
-                                                type="text"
+                                            <select
                                                 className="form-control py-2"
                                                 name="department"
                                                 value={formData.department}
                                                 onChange={handleChange}
-                                            />
+                                            >
+                                                <option value="">Select Department</option>
+                                                {DEPARTMENTS.map(dept => (
+                                                    <option key={dept} value={dept}>{dept}</option>
+                                                ))}
+                                            </select>
                                         </div>
                                     </div>
                                 </div>

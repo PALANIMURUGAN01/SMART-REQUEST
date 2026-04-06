@@ -1,4 +1,6 @@
 const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const multer = require("multer");
@@ -11,6 +13,9 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const User = require("./models/User");
 const Request = require("./models/Request");
 const Counter = require("./models/Counter");
+const Chat = require("./models/Chat");
+const Notification = require("./models/Notification");
+const { sendAdminNotification, sendUserNotification, sendStatusNotification, sendNewRequestAdminAlert } = require("./utils/mailer");
 
 const app = express();
 
@@ -301,7 +306,39 @@ app.post("/requests", upload.single("file"), async (req, res) => {
 
     const newRequest = new Request(requestData);
     await newRequest.save();
-    res.json(newRequest);
+
+    // Populate user to get name for the email
+    const populatedReq = await Request.findById(newRequest._id).populate("createdBy", "name email");
+
+    if (populatedReq && populatedReq.createdBy) {
+      sendNewRequestAdminAlert(
+        populatedReq.title,
+        populatedReq.description,
+        populatedReq.requestId,
+        populatedReq._id,
+        populatedReq.createdBy.name
+      );
+
+      // Create In-App Notification for ALL Admins
+      try {
+        const admins = await User.find({ role: "admin" });
+        for (const admin of admins) {
+          const notif = new Notification({
+            recipient: admin._id,
+            title: "New Request Submitted",
+            message: `User ${populatedReq.createdBy.name} submitted a new request: ${populatedReq.title}`,
+            type: "new_request",
+            link: "/admin"
+          });
+          await notif.save();
+          io.to(admin._id.toString()).emit("newNotification", notif);
+        }
+      } catch (err) {
+        console.error("Admin notification error:", err.message);
+      }
+    }
+
+    res.json(populatedReq || newRequest);
   } catch (err) {
     console.error("Submission Error:", err);
     res.status(400).json({ error: err.message });
@@ -314,6 +351,8 @@ app.patch("/requests/:id", async (req, res) => {
     const updateData = { ...req.body };
     if (updateData.status === "Approved") {
       updateData.approvedAt = new Date();
+    } else if (updateData.status === "Resolved") {
+      updateData.resolvedAt = new Date();
     } else if (updateData.status === "Rejected") {
       updateData.rejectedAt = new Date();
     }
@@ -322,11 +361,187 @@ app.patch("/requests/:id", async (req, res) => {
       req.params.id,
       { $set: updateData },
       { new: true }
-    );
+    ).populate("createdBy", "name email").populate("assignedTo", "name");
+
     if (!updatedRequest) return res.status(404).json({ error: "Request not found" });
+
+    // 1. Staff Notification: If request was assigned or re-assigned
+    if (updateData.assignedTo) {
+      try {
+        const notif = new Notification({
+          recipient: updateData.assignedTo,
+          title: "New Request Assigned",
+          message: `Admin assigned request #${updatedRequest.requestId} ("${updatedRequest.title}") to you.`,
+          type: "request_update",
+          link: "/staff-dashboard"
+        });
+        await notif.save();
+        io.to(updateData.assignedTo.toString()).emit("newNotification", notif);
+      } catch (err) {
+        console.error("Staff notification error:", err.message);
+      }
+    }
+
+    // 2. Admin Notification: If request was resolved (by staff or admin)
+    if (updateData.status === "Resolved") {
+      try {
+        const admins = await User.find({ role: "admin" });
+        for (const admin of admins) {
+          const notif = new Notification({
+            recipient: admin._id,
+            title: "Request Resolved",
+            message: `Request #${updatedRequest.requestId} ("${updatedRequest.title}") has been marked as Resolved.`,
+            type: "request_update",
+            link: "/admin"
+          });
+          await notif.save();
+          io.to(admin._id.toString()).emit("newNotification", notif);
+        }
+      } catch (err) {
+        console.error("Admin resolution notification error:", err.message);
+      }
+    }
+
+    // 3. User Notification: Send email and in-app notification if status changed
+    if (updateData.status && updatedRequest.createdBy) {
+      const user = updatedRequest.createdBy;
+      sendStatusNotification(
+        user.email,
+        user.name,
+        updatedRequest.title,
+        updatedRequest.requestId,
+        updateData.status
+      );
+
+      // Create In-App Notification for User
+      try {
+        const notif = new Notification({
+          recipient: user._id,
+          title: "Request Status Updated",
+          message: `Your request "${updatedRequest.title}" is now ${updateData.status}.`,
+          type: "request_update",
+          link: "/requests"
+        });
+        await notif.save();
+        io.to(user._id.toString()).emit("newNotification", notif);
+      } catch (err) {
+        console.error("User notification error:", err.message);
+      }
+    }
+
     res.json(updatedRequest);
   } catch (err) {
     res.status(400).json({ error: err.message });
+  }
+});
+
+// Quick-Approve via Email Link
+app.get("/requests/:id/quick-approve", async (req, res) => {
+  try {
+    const updatedRequest = await Request.findByIdAndUpdate(
+      req.params.id,
+      { $set: { status: "Approved", approvedAt: new Date() } },
+      { new: true }
+    ).populate("createdBy", "name email");
+
+    if (!updatedRequest) {
+      return res.status(404).send("<h2>Request Not Found or already deleted.</h2>");
+    }
+
+    // Also trigger the status notification to the user
+    if (updatedRequest.createdBy) {
+      const user = updatedRequest.createdBy;
+      sendStatusNotification(
+        user.email,
+        user.name,
+        updatedRequest.title,
+        updatedRequest.requestId,
+        "Approved"
+      );
+    }
+
+    // Return a styled success page to show the admin who clicked the link
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>SRLM - Request Approved</title>
+        <style>
+          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8fafc; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+          .card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; max-width: 400px; }
+          .icon { font-size: 48px; display: inline-block; background: #d1fae5; color: #10b981; width: 80px; height: 80px; line-height: 80px; border-radius: 50%; margin-bottom: 20px; }
+          h2 { color: #1e293b; margin: 0 0 10px 0; }
+          p { color: #64748b; margin: 0 0 30px 0; }
+          a { display: inline-block; background: #4f46e5; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <div class="icon">✓</div>
+          <h2>Request #${updatedRequest.requestId} Approved!</h2>
+          <p>The request "<strong>${updatedRequest.title}</strong>" has been successfully approved.</p>
+          <p style="font-size: 13px;">An email notification has been sent to the user.</p>
+          <a href="http://localhost:3000/admin">Go to Dashboard</a>
+        </div>
+      </body>
+      </html>
+    `);
+  } catch (err) {
+    res.status(500).send("<h2>Internal Server Error</h2><p>" + err.message + "</p>");
+  }
+});
+
+// Quick-Reject via Email Link
+app.get("/requests/:id/quick-reject", async (req, res) => {
+  try {
+    const updatedRequest = await Request.findByIdAndUpdate(
+      req.params.id,
+      { $set: { status: "Rejected", rejectedAt: new Date() } },
+      { new: true }
+    ).populate("createdBy", "name email");
+
+    if (!updatedRequest) {
+      return res.status(404).send("<h2>Request Not Found or already deleted.</h2>");
+    }
+
+    if (updatedRequest.createdBy) {
+      const user = updatedRequest.createdBy;
+      sendStatusNotification(
+        user.email,
+        user.name,
+        updatedRequest.title,
+        updatedRequest.requestId,
+        "Rejected"
+      );
+    }
+
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>SRLM - Request Rejected</title>
+        <style>
+          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8fafc; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+          .card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; max-width: 400px; }
+          .icon { font-size: 48px; display: inline-block; background: #fee2e2; color: #ef4444; width: 80px; height: 80px; line-height: 80px; border-radius: 50%; margin-bottom: 20px; }
+          h2 { color: #1e293b; margin: 0 0 10px 0; }
+          p { color: #64748b; margin: 0 0 30px 0; }
+          a { display: inline-block; background: #4f46e5; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <div class="icon">✕</div>
+          <h2>Request #${updatedRequest.requestId} Rejected</h2>
+          <p>The request "<strong>${updatedRequest.title}</strong>" has been rejected.</p>
+          <p style="font-size: 13px;">The user has been notified via email.</p>
+          <a href="http://localhost:3000/admin">Go to Dashboard</a>
+        </div>
+      </body>
+      </html>
+    `);
+  } catch (err) {
+    res.status(500).send("<h2>Internal Server Error</h2><p>" + err.message + "</p>");
   }
 });
 
@@ -421,7 +636,7 @@ app.get("/user-requests/:userId", async (req, res) => {
     }
 
     // 1. Get user's requests
-    const requests = await Request.find({ createdBy: userId }).sort({ createdAt: 1 });
+    const requests = await Request.find({ createdBy: userId }).sort({ createdAt: 1 }).populate("assignedTo", "name");
 
     // 2. Calculate stats
     const stats = {
@@ -444,7 +659,7 @@ app.get("/assigned-requests/:staffId", async (req, res) => {
     if (!staffId || staffId === "undefined") {
       return res.status(400).json({ error: "Staff ID is required" });
     }
-    const requests = await Request.find({ assignedTo: staffId }).sort({ requestId: 1 }).populate("createdBy", "name email");
+    const requests = await Request.find({ assignedTo: staffId }).sort({ requestId: 1 }).populate("createdBy", "name email").populate("assignedTo", "name");
     res.json(requests);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -452,7 +667,138 @@ app.get("/assigned-requests/:staffId", async (req, res) => {
 });
 
 
+// Chat model and mailer already imported at top of file
+
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"]
+  }
+});
+
+io.on("connection", (socket) => {
+  console.log("New client connected to socket:", socket.id);
+
+  // User joins their specific room
+  socket.on("joinRoom", async ({ userId }) => {
+    socket.join(userId);
+    console.log(`User ${userId} joined their chat room`);
+  });
+
+  // Admin joins a specific user's room to reply
+  socket.on("adminJoinRoom", ({ userId }) => {
+    socket.join(userId);
+    console.log(`Admin joined room: ${userId}`);
+  });
+
+  socket.on("sendMessage", async (data) => {
+    const { userId, sender, text, userEmail } = data;
+    try {
+      // Find or create chat document
+      let chat = await Chat.findOne({ userId });
+      if (!chat) {
+        chat = new Chat({ userId, messages: [] });
+      }
+
+      const newMessage = { sender, text, timestamp: new Date() };
+      chat.messages.push(newMessage);
+      chat.lastUpdated = new Date();
+      await chat.save();
+
+      // Emit to everyone in the room (both user and admin observing)
+      io.to(userId).emit("receiveMessage", newMessage);
+
+      // Trigger Email Notification
+      if (sender === "user") {
+        sendAdminNotification(userEmail || "User", text);
+        // Create In-App Notification for ALL Admins
+        const admins = await User.find({ role: "admin" });
+        for (const admin of admins) {
+          const notif = new Notification({
+            recipient: admin._id,
+            title: "New Message",
+            message: `User ${userEmail || 'Client'} sent a message: ${text.substring(0, 50)}${text.length > 50 ? '...' : ''}`,
+            type: "chat",
+            link: "/admin"
+          });
+          await notif.save();
+          io.to(admin._id.toString()).emit("newNotification", notif);
+        }
+      } else if (sender === "admin") {
+        sendUserNotification(userEmail || "User", text);
+        // Create In-App Notification for User
+        const notif = new Notification({
+          recipient: userId, // userId in chat state is the user's ID
+          title: "New Message from Support",
+          message: `Admin: ${text.substring(0, 50)}${text.length > 50 ? '...' : ''}`,
+          type: "chat",
+          link: "/dashboard"
+        });
+        await notif.save();
+        io.to(userId).emit("newNotification", notif);
+      }
+    } catch (err) {
+      console.error("Socket Send Message Error:", err.message);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Client disconnected:", socket.id);
+  });
+});
+
+// GET Chat History API
+app.get("/chat/:userId", async (req, res) => {
+  try {
+    const chat = await Chat.findOne({ userId: req.params.userId });
+    res.json(chat ? chat.messages : []);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET All Active Chats for Admin
+app.get("/chats/all", async (req, res) => {
+  try {
+    const chats = await Chat.find().populate("userId", "name email").sort({ lastUpdated: -1 });
+    res.json(chats);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Notification Routes ---
+app.get("/notifications/:userId", async (req, res) => {
+  try {
+    const notifications = await Notification.find({ recipient: req.params.userId })
+      .sort({ createdAt: -1 })
+      .limit(20);
+    res.json(notifications);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.patch("/notifications/:id/read", async (req, res) => {
+  try {
+    const notif = await Notification.findByIdAndUpdate(req.params.id, { isRead: true }, { new: true });
+    res.json(notif);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.patch("/notifications/read-all/:userId", async (req, res) => {
+  try {
+    await Notification.updateMany({ recipient: req.params.userId, isRead: false }, { isRead: true });
+    res.json({ message: "All notifications marked as read" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT} with Socket.io`);
 });

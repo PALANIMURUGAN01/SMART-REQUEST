@@ -194,7 +194,8 @@ export default function GuideDetails() {
     }
 
     return (
-        <div className="container-fluid py-4 px-lg-5">
+        <div className="container-fluid py-4 px-lg-5 animate-fade-in">
+          <div className="mx-auto" style={{ maxWidth: '1140px' }}>
             <div className="d-flex flex-wrap justify-content-between align-items-end mb-4 gap-3 border-bottom pb-3">
                 <div>
                     <h2 className="mb-1 fw-bold text-primary">{guide.title}</h2>
@@ -256,6 +257,7 @@ export default function GuideDetails() {
                     </div>
                 </div>
             </div>
+          </div>
         </div>
     );
 }

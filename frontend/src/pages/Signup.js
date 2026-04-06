@@ -110,184 +110,169 @@ export default function Signup() {
   return (
     <div className="auth-bg">
       <TermsModal show={showTerms} onClose={() => setShowTerms(false)} />
-      <div className="card shadow-lg border-0 overflow-hidden" style={{ width: "100%", maxWidth: "900px", minHeight: "600px" }}>
-        <div className="row g-0 h-100">
-          {/* Left Side - Hero Section */}
-          <div className="col-md-5 d-none d-md-flex flex-column justify-content-center align-items-center text-white p-5 grad-indigo">
-            <div className="mb-4 bg-white bg-opacity-25 rounded-circle p-4">
-              <FiCpu size={64} color="white" />
+      <div className="auth-card animate-up">
+        <div className="text-center mb-4">
+          <div className="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle mb-3" style={{ width: "64px", height: "64px" }}>
+            <FiCpu size={30} />
+          </div>
+          <h3 className="fw-bold text-dark mb-1 outfit-font">Create an Account</h3>
+          <p className="text-muted small">Join us and start managing your requests</p>
+        </div>
+
+        {/* General Error */}
+        {errors.general && (
+          <div className="alert alert-danger alert-dismissible fade show small py-2 d-flex align-items-center" role="alert">
+            <div className="flex-grow-1">{errors.general}</div>
+            <button
+              type="button"
+              className="btn-close btn-close-sm position-relative"
+              style={{ padding: "0" }}
+              onClick={() => setErrors({ ...errors, general: "" })}
+            ></button>
+          </div>
+        )}
+
+        {/* Form */}
+        <form onSubmit={handleSignup} noValidate>
+          {/* Full Name */}
+          <div className="mb-3">
+            <label className="form-label text-secondary small fw-bold">Full Name</label>
+            <div className={`input-group rounded-3 overflow-hidden ${errors.fullName ? 'border border-danger' : 'border'}`} style={{ borderColor: "var(--border-color)" }}>
+              <span className="input-group-text bg-white border-0 text-muted ps-3 pe-2"><FiUser size={18} /></span>
+              <input
+                type="text"
+                className="form-control border-0 shadow-none ps-2"
+                placeholder="John Doe"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                disabled={loading}
+                style={{ height: "48px", backgroundColor: "white" }}
+              />
             </div>
-            <h2 className="fw-bold mb-3 outfit-font">Join Us!</h2>
-            <p className="text-center opacity-75 fs-5">
-              Create an account and start managing your requests efficiently.
-            </p>
-            <div className="mt-5 d-flex gap-3 text-white-50">
-              <FiCheckCircle size={24} />
-              <small>Easy Setup</small>
-            </div>
+            {errors.fullName && <div className="text-danger small mt-1">{errors.fullName}</div>}
           </div>
 
-          {/* Right Side - Signup Form */}
-          <div className="col-md-7 bg-white p-5">
-            <div className="d-flex align-items-center justify-content-between mb-4">
-              <h3 className="fw-bold text-dark mb-0 outfit-font">Create Account</h3>
+          {/* Email */}
+          <div className="mb-3">
+            <label className="form-label text-secondary small fw-bold">Email Address</label>
+            <div className={`input-group rounded-3 overflow-hidden ${errors.email ? 'border border-danger' : 'border'}`} style={{ borderColor: "var(--border-color)" }}>
+              <span className="input-group-text bg-white border-0 text-muted ps-3 pe-2"><FiMail size={18} /></span>
+              <input
+                type="email"
+                className="form-control border-0 shadow-none ps-2"
+                placeholder="name@company.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
+                style={{ height: "48px", backgroundColor: "white" }}
+              />
             </div>
+            {errors.email && <div className="text-danger small mt-1">{errors.email}</div>}
+          </div>
 
-            {/* General Error */}
-            {errors.general && (
-              <div className="alert alert-danger alert-dismissible fade show" role="alert">
-                {errors.general}
+          {/* Password */}
+          <div className="row">
+            <div className="col-12 col-md-6 mb-3">
+              <label className="form-label text-secondary small fw-bold">Password</label>
+              <div className={`input-group rounded-3 overflow-hidden ${errors.password ? 'border border-danger' : 'border'}`} style={{ borderColor: "var(--border-color)" }}>
+                <span className="input-group-text bg-white border-0 text-muted ps-3 pe-1"><FiLock size={18} /></span>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  className="form-control border-0 shadow-none ps-2"
+                  placeholder="Min 6 chars"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
+                  style={{ height: "48px", backgroundColor: "white", paddingRight: 0 }}
+                />
                 <button
                   type="button"
-                  className="btn-close"
-                  onClick={() => setErrors({ ...errors, general: "" })}
+                  className="input-group-text bg-white border-0 text-muted pe-3 ps-1"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{ cursor: "pointer" }}
+                >
+                  {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                </button>
+              </div>
+              {errors.password && <div className="text-danger small mt-1">{errors.password}</div>}
+            </div>
+
+            <div className="col-12 col-md-6 mb-3">
+              <label className="form-label text-secondary small fw-bold">Confirm</label>
+              <div className={`input-group rounded-3 overflow-hidden ${errors.confirmPassword ? 'border border-danger' : 'border'}`} style={{ borderColor: "var(--border-color)" }}>
+                <span className="input-group-text bg-white border-0 text-muted ps-3 pe-1"><FiLock size={18} /></span>
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  className="form-control border-0 shadow-none ps-2"
+                  placeholder="Confirm"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  disabled={loading}
+                  style={{ height: "48px", backgroundColor: "white", paddingRight: 0 }}
                 />
+                <button
+                  type="button"
+                  className="input-group-text bg-white border-0 text-muted pe-3 ps-1"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  style={{ cursor: "pointer" }}
+                >
+                  {showConfirmPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                </button>
               </div>
-            )}
-
-            {/* Form */}
-            <form onSubmit={handleSignup} noValidate>
-              {/* Full Name */}
-              <div className="mb-3">
-                <label className="form-label text-secondary small fw-bold">FULL NAME</label>
-                <div className="input-group">
-                  <span className="input-group-text bg-light border-end-0 text-muted"><FiUser /></span>
-                  <input
-                    type="text"
-                    className={`form-control bg-light border-0 shadow-sm ${errors.fullName ? "is-invalid" : ""}`}
-                    placeholder="John Doe"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    disabled={loading}
-                    style={{ height: "48px", paddingLeft: "15px" }}
-                  />
-                </div>
-                {errors.fullName && <div className="text-danger small mt-1">{errors.fullName}</div>}
-              </div>
-
-              {/* Email */}
-              <div className="mb-3">
-                <label className="form-label text-secondary small fw-bold">EMAIL ADDRESS</label>
-                <div className="input-group">
-                  <span className="input-group-text bg-light border-end-0 text-muted"><FiMail /></span>
-                  <input
-                    type="email"
-                    className={`form-control bg-light border-0 shadow-sm ${errors.email ? "is-invalid" : ""}`}
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={loading}
-                    style={{ height: "48px", paddingLeft: "15px" }}
-                  />
-                </div>
-                {errors.email && <div className="text-danger small mt-1">{errors.email}</div>}
-              </div>
-
-              {/* Password */}
-              <div className="row">
-                <div className="col-md-6 mb-3">
-                  <label className="form-label text-secondary small fw-bold">PASSWORD</label>
-                  <div className="input-group">
-                    <span className="input-group-text bg-light border-end-0 text-muted"><FiLock /></span>
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      className={`form-control bg-light border-start-0 ps-0 ${errors.password ? "is-invalid" : ""}`}
-                      placeholder="Min 6 chars"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      disabled={loading}
-                      style={{ height: "45px" }}
-                    />
-                    <button
-                      type="button"
-                      className="input-group-text bg-light border-start-0 text-muted"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? <FiEyeOff /> : <FiEye />}
-                    </button>
-                  </div>
-                  {errors.password && <div className="text-danger small mt-1">{errors.password}</div>}
-                </div>
-
-                <div className="col-md-6 mb-3">
-                  <label className="form-label text-secondary small fw-bold">CONFIRM</label>
-                  <div className="input-group">
-                    <span className="input-group-text bg-light border-end-0 text-muted"><FiLock /></span>
-                    <input
-                      type={showConfirmPassword ? "text" : "password"}
-                      className={`form-control bg-light border-start-0 ps-0 ${errors.confirmPassword ? "is-invalid" : ""}`}
-                      placeholder="Confirm"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      disabled={loading}
-                      style={{ height: "45px" }}
-                    />
-                    <button
-                      type="button"
-                      className="input-group-text bg-light border-start-0 text-muted"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    >
-                      {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
-                    </button>
-                  </div>
-                  {errors.confirmPassword && <div className="text-danger small mt-1">{errors.confirmPassword}</div>}
-                </div>
-              </div>
-
-              {/* Terms & Conditions */}
-              <div className="mb-4">
-                <div className="form-check">
-                  <input
-                    type="checkbox"
-                    className={`form-check-input ${errors.terms ? "is-invalid" : ""}`}
-                    id="agreeTerms"
-                    checked={agreeTerms}
-                    onChange={(e) => setAgreeTerms(e.target.checked)}
-                    disabled={loading}
-                  />
-                  <label className="form-check-label small text-muted" htmlFor="agreeTerms">
-                    I agree to the <a href="#terms" className="text-decoration-none" onClick={(e) => { e.preventDefault(); setShowTerms(true); }}>Terms & Conditions</a>
-                  </label>
-                </div>
-                {errors.terms && <div className="text-danger small">{errors.terms}</div>}
-              </div>
-
-              {/* Signup Button */}
-              <button
-                type="submit"
-                className="btn grad-indigo w-100 py-3 fw-bold text-uppercase shadow-md mb-3 border-0 rounded-3"
-                disabled={loading}
-              >
-                {loading ? "Creating Account..." : "Sign Up"}
-              </button>
-
-              <div className="position-relative text-center mb-3">
-                <hr className="text-muted opacity-25" />
-                <span className="position-absolute top-50 start-50 translate-middle px-3 bg-white text-muted small">OR</span>
-              </div>
-
-              <div className="d-flex justify-content-center">
-                <GoogleLogin
-                  onSuccess={handleGoogleSuccess}
-                  onError={handleGoogleError}
-                  useOneTap
-                  theme="outline"
-                  size="large"
-                  text="signup_with"
-                  shape="rectangular"
-                  width="100%"
-                />
-              </div>
-
-            </form>
-
-            {/* Footer - Login Link */}
-            <div className="text-center mt-4">
-              <p className="text-muted small">
-                Already have an account? <Link to="/" className="text-primary text-decoration-none fw-bold">Login here</Link>
-              </p>
+              {errors.confirmPassword && <div className="text-danger small mt-1">{errors.confirmPassword}</div>}
             </div>
           </div>
+
+          {/* Terms */}
+          <div className="mb-4">
+            <div className="form-check">
+              <input
+                type="checkbox"
+                className={`form-check-input ${errors.terms ? "is-invalid" : ""}`}
+                id="agreeTerms"
+                checked={agreeTerms}
+                onChange={(e) => setAgreeTerms(e.target.checked)}
+                disabled={loading}
+              />
+              <label className="form-check-label small text-muted" htmlFor="agreeTerms">
+                I agree to the <a href="#terms" className="text-decoration-none fw-medium text-primary" onClick={(e) => { e.preventDefault(); setShowTerms(true); }}>Terms & Conditions</a>
+              </label>
+            </div>
+            {errors.terms && <div className="text-danger small mt-1">{errors.terms}</div>}
+          </div>
+
+          <button
+            type="submit"
+            className="btn btn-primary w-100 fw-medium mb-3 rounded-3"
+            style={{ height: "48px", fontSize: "15px", boxShadow: "0 4px 6px -1px rgba(79, 70, 229, 0.2)" }}
+            disabled={loading}
+          >
+            {loading ? "Creating Account..." : "Sign Up"}
+          </button>
+        </form>
+
+        <div className="position-relative text-center my-4">
+          <hr className="text-muted opacity-25" />
+          <span className="position-absolute top-50 start-50 translate-middle px-3 text-muted small fw-medium" style={{ fontSize: "0.75rem", backgroundColor: "var(--card-bg)" }}>OR SIGN UP WITH</span>
+        </div>
+
+        <div className="d-flex justify-content-center mb-4">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+            useOneTap
+            theme="outline"
+            size="large"
+            text="signup_with"
+            shape="rectangular"
+            width="100%"
+          />
+        </div>
+
+        <div className="text-center mt-3">
+          <p className="text-muted small mb-1">
+            Already have an account? <Link to="/" className="text-primary text-decoration-none fw-medium">Log in instead</Link>
+          </p>
         </div>
       </div>
     </div>

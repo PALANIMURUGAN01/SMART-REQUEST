@@ -12,7 +12,7 @@ export default function Requests() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
   const [filterPriority, setFilterPriority] = useState("all");
-  const [sortBy, setSortBy] = useState("date");
+  const [sortBy, setSortBy] = useState("id");
   const [viewMode, setViewMode] = useState("table");
   const [activeRequest, setActiveRequest] = useState(null);
   const [showDetail, setShowDetail] = useState(false);
@@ -24,14 +24,33 @@ export default function Requests() {
     setError("");
     try {
       const isStaff = user.role?.toLowerCase() === 'staff';
-      const url = isStaff
-        ? `http://localhost:5000/assigned-requests/${user._id}`
-        : "http://localhost:5000/requests";
+      let data = [];
 
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`Server returned ${res.status}`);
-      const data = await res.json();
-      setRequests(data);
+      if (isStaff && user._id) {
+        // Try assigned requests first
+        try {
+          const assignedRes = await fetch(`http://localhost:5000/assigned-requests/${user._id}`);
+          if (assignedRes.ok) {
+            data = await assignedRes.json();
+          }
+        } catch {
+          // ignore, will fallback
+        }
+        // Fallback: if no assigned requests, show all requests
+        if (!data || data.length === 0) {
+          const allRes = await fetch("http://localhost:5000/requests");
+          if (allRes.ok) {
+            data = await allRes.json();
+          }
+        }
+      } else {
+        // Admin or other roles: fetch all
+        const res = await fetch("http://localhost:5000/requests");
+        if (!res.ok) throw new Error(`Server returned ${res.status}`);
+        data = await res.json();
+      }
+
+      setRequests(data || []);
     } catch (err) {
       console.error(err);
       setError("Could not load requests. Ensure the backend server is running.");
@@ -70,7 +89,9 @@ export default function Requests() {
     }
 
     if (sortBy === "date") {
-      filtered.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+      filtered.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    } else if (sortBy === "id") {
+      filtered.sort((a, b) => (b.requestId || 0) - (a.requestId || 0));
     } else if (sortBy === "title") {
       filtered.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
     } else if (sortBy === "priority") {
@@ -153,6 +174,7 @@ export default function Requests() {
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
               >
+                <option value="id">Sort by ID</option>
                 <option value="date">Sort by Date</option>
                 <option value="title">Sort by Title</option>
                 <option value="priority">Sort by Priority</option>
@@ -359,9 +381,12 @@ export default function Requests() {
                 {activeRequest.status === 'Rejected' && activeRequest.rejectedAt && (
                   <div className="col-md-4">
                     <small className="text-muted d-block text-uppercase small fw-bold">Rejected Time</small>
-                    <div className="fw-medium text-danger">{formatDate(activeRequest.rejectedAt)}</div>
                   </div>
                 )}
+                <div className="col-md-4">
+                  <small className="text-muted d-block text-uppercase small fw-bold">Assigned To</small>
+                  <div className="fw-medium">{typeof activeRequest.assignedTo === 'object' ? (activeRequest.assignedTo?.name || 'Not Assigned') : (activeRequest.assignedTo || 'Not Assigned')}</div>
+                </div>
               </div>
 
               <div className="d-flex justify-content-end gap-2">

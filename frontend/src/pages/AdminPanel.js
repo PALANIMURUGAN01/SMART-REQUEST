@@ -3,6 +3,8 @@ import { getBadgeClass } from "../utils/statusUtils";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { FiFileText, FiClock, FiCheckCircle, FiXCircle } from "react-icons/fi";
+import AdminChatDesk from "../components/AdminChatDesk";
+import { DEPARTMENTS } from "../constants/departments";
 
 export default function AdminPanel() {
   const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
@@ -258,6 +260,7 @@ export default function AdminPanel() {
           <button className={`btn btn-sm px-3 rounded-2 border-0 fw-bold ${view === 'overview' ? 'grad-indigo shadow-sm' : 'btn-light text-muted'}`} onClick={() => setView('overview')}>Overview</button>
           <button className={`btn btn-sm px-3 rounded-2 border-0 fw-bold ${view === 'requests' ? 'grad-indigo shadow-sm' : 'btn-light text-muted'}`} onClick={() => setView('requests')}>Requests</button>
           <button className={`btn btn-sm px-3 rounded-2 border-0 fw-bold ${view === 'users' ? 'grad-indigo shadow-sm' : 'btn-light text-muted'}`} onClick={() => setView('users')}>Users</button>
+          <button className={`btn btn-sm px-3 rounded-2 border-0 fw-bold ${view === 'chats' ? 'grad-indigo shadow-sm' : 'btn-light text-muted'}`} onClick={() => setView('chats')}>Support Chats</button>
         </div>
       </div>
 
@@ -343,7 +346,7 @@ export default function AdminPanel() {
                       {requests.length === 0 ? (
                         <tr><td colSpan="5" className="text-center py-4 text-muted">No activity found</td></tr>
                       ) : (
-                        [...requests].slice(-5).map((r) => (
+                        [...requests].sort((a, b) => (b.requestId || 0) - (a.requestId || 0)).slice(0, 5).map((r) => (
                           <tr key={r._id}>
                             <td className="ps-4 fw-bold text-primary">{r.requestId}</td>
                             <td>{r.title}</td>
@@ -532,6 +535,11 @@ export default function AdminPanel() {
               </div>
             </div>
           )}
+          {view === "chats" && (
+            <div className="animate-fade-in">
+              <AdminChatDesk />
+            </div>
+          )}
         </>
       )}
 
@@ -571,7 +579,12 @@ export default function AdminPanel() {
                     </div>
                     <div className="col-md-6 mb-3">
                       <label className="form-label small fw-bold text-muted text-uppercase" style={{ fontSize: '11px', letterSpacing: '0.05em' }}>Department</label>
-                      <input type="text" className="form-control border-0 shadow-sm rounded-3" placeholder="e.g. IT, HR" value={userForm.department} onChange={e => setUserForm({ ...userForm, department: e.target.value })} />
+                      <select className="form-select border-0 shadow-sm rounded-3" value={userForm.department} onChange={e => setUserForm({ ...userForm, department: e.target.value })}>
+                        <option value="">Select Department</option>
+                        {DEPARTMENTS.map(dept => (
+                          <option key={dept} value={dept}>{dept}</option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                   <div className="mb-3">
@@ -607,7 +620,7 @@ export default function AdminPanel() {
           <div className="modal-dialog modal-lg modal-dialog-centered" onClick={e => e.stopPropagation()}>
             <div className="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
               <div className="modal-header border-0 pt-4 px-4 bg-light">
-                <h5 className="modal-title fw-bold outfit-font text-dark">{active.title} <small className="text-muted ms-2 opacity-50">#{active.requestId}</small></h5>
+                <h5 className="modal-title fw-bold outfit-font text-dark">{active.title} <small className="text-muted ms-2 opacity-50">{active.requestId}</small></h5>
                 <button type="button" className="btn-close" onClick={() => setActive(null)}></button>
               </div>
               <div className="modal-body p-4 bg-light">

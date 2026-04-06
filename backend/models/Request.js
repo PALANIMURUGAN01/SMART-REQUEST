@@ -35,6 +35,9 @@ const requestSchema = new mongoose.Schema({
     approvedAt: {
         type: Date
     },
+    resolvedAt: {
+        type: Date
+    },
     rejectedAt: {
         type: Date
     },

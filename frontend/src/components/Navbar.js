@@ -3,14 +3,17 @@ import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/image.png";
 import {
   FiUser, FiSettings, FiHelpCircle, FiLogOut,
-  FiBell, FiGrid, FiChevronDown, FiClock
+  FiBell, FiGrid, FiChevronDown, FiClock, FiCheckSquare
 } from "react-icons/fi";
+import { io } from "socket.io-client";
 
 export default function Navbar({ onToggleSidebar }) {
   const [dateTime, setDateTime] = useState(new Date());
   const [showProfile, setShowProfile] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [pendingRequests, setPendingRequests] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const socketRef = useRef(null);
   const profileRef = useRef(null);
   const notifRef = useRef(null);
   const navigate = useNavigate();
@@ -41,21 +44,60 @@ export default function Navbar({ onToggleSidebar }) {
     return () => clearInterval(timer);
   }, []);
 
+  // Notification logic
   useEffect(() => {
-    async function fetchPending() {
+    if (!user._id) return;
+
+    // 1. Fetch initial notifications
+    const fetchNotifications = async () => {
       try {
-        const res = await fetch("http://localhost:5000/requests");
+        const res = await fetch(`http://localhost:5000/notifications/${user._id}`);
         if (res.ok) {
           const data = await res.json();
-          const pending = data.filter(r => (r.status || 'Pending').toLowerCase() === 'pending');
-          setPendingRequests(pending);
+          setNotifications(data);
+          setUnreadCount(data.filter(n => !n.isRead).length);
         }
-      } catch (err) { }
-    }
-    fetchPending();
-    const interval = setInterval(fetchPending, 30000);
-    return () => clearInterval(interval);
-  }, []);
+      } catch (err) {
+        console.error("Fetch notifications error:", err);
+      }
+    };
+
+    fetchNotifications();
+
+    // 2. Setup Socket.io
+    socketRef.current = io("http://localhost:5000");
+    socketRef.current.emit("joinRoom", { userId: user._id });
+
+    socketRef.current.on("newNotification", (notif) => {
+      setNotifications(prev => [notif, ...prev].slice(0, 20));
+      setUnreadCount(prev => prev + 1);
+
+      // Play a subtle sound or visual alert if needed
+      if (Notification.permission === "granted") {
+        new window.Notification(notif.title, { body: notif.message });
+      }
+    });
+
+    return () => {
+      if (socketRef.current) socketRef.current.disconnect();
+    };
+  }, [user._id]);
+
+  const markAsRead = async (id) => {
+    try {
+      await fetch(`http://localhost:5000/notifications/${id}/read`, { method: 'PATCH' });
+      setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (err) { }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      await fetch(`http://localhost:5000/notifications/read-all/${user._id}`, { method: 'PATCH' });
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      setUnreadCount(0);
+    } catch (err) { }
+  };
 
   const formatDate = (t) => {
     if (!t) return 'N/A';
@@ -109,12 +151,17 @@ export default function Navbar({ onToggleSidebar }) {
             aria-label="Notifications"
           >
             <FiBell size={20} color="#64748b" />
-            {pendingRequests.length > 0 && (
+            {unreadCount > 0 && (
               <span style={{
-                position: 'absolute', top: '6px', right: '6px',
-                width: '8px', height: '8px', borderRadius: '50%',
-                background: '#ef4444', border: '1.5px solid #fff'
-              }} />
+                position: 'absolute', top: '2px', right: '2px',
+                minWidth: '16px', height: '16px', borderRadius: '10px',
+                background: '#ef4444', border: '2px solid #fff',
+                fontSize: '9px', color: 'white', fontWeight: 800,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                padding: '0 3px'
+              }}>
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
             )}
           </button>
 
@@ -124,55 +171,63 @@ export default function Navbar({ onToggleSidebar }) {
               <div style={{ padding: '14px 18px 10px', borderBottom: '1px solid #f1f5f9' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span className="outfit-font" style={{ fontWeight: 700, fontSize: '15px', color: '#1e293b' }}>Notifications</span>
-                  {pendingRequests.length > 0 && (
-                    <span style={{ background: '#fef3c7', color: '#d97706', borderRadius: '20px', padding: '2px 10px', fontSize: '11px', fontWeight: 700 }}>
-                      {pendingRequests.length} pending
-                    </span>
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); markAllAsRead(); }}
+                      style={{ background: 'none', border: 'none', color: '#4f46e5', fontSize: '11px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <FiCheckSquare size={12} /> Mark all read
+                    </button>
                   )}
                 </div>
               </div>
 
               {/* Items */}
-              <div style={{ maxHeight: '320px', overflowY: 'auto' }}>
-                {pendingRequests.length === 0 ? (
+              <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
+                {notifications.length === 0 ? (
                   <div style={{ padding: '32px 18px', textAlign: 'center', color: '#94a3b8' }}>
                     <FiBell size={28} style={{ marginBottom: '8px', opacity: 0.3 }} />
-                    <p style={{ margin: 0, fontSize: '13px' }}>No pending notifications</p>
+                    <p style={{ margin: 0, fontSize: '13px' }}>No notifications yet</p>
                   </div>
                 ) : (
-                  pendingRequests.slice(0, 6).map((req, i) => (
+                  notifications.map((notif, i) => (
                     <button
-                      key={req._id}
+                      key={notif._id}
                       style={{
                         width: '100%', textAlign: 'left', border: 'none',
-                        background: i % 2 === 0 ? '#fafbff' : '#fff',
-                        padding: '11px 18px', display: 'block',
+                        background: !notif.isRead ? '#f0f4ff' : '#fff',
+                        padding: '12px 18px', display: 'block',
                         borderBottom: '1px solid #f1f5f9', cursor: 'pointer',
-                        transition: 'background 0.15s'
+                        transition: 'background 0.15s',
+                        position: 'relative'
                       }}
                       onClick={() => {
+                        markAsRead(notif._id);
                         setShowNotifications(false);
-                        navigate(user.role?.toLowerCase() === 'admin' ? "/admin" : "/requests");
+                        if (notif.link) navigate(notif.link);
                       }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                        <span style={{ fontWeight: 600, fontSize: '13px', color: '#1e293b', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {req.title}
+                      {!notif.isRead && (
+                        <div style={{ position: 'absolute', left: '6px', top: '50%', transform: 'translateY(-50%)', width: '6px', height: '6px', borderRadius: '50%', background: '#4f46e5' }} />
+                      )}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                        <span style={{ fontWeight: notif.isRead ? 600 : 700, fontSize: '13px', color: '#1e293b', maxWidth: '190px' }}>
+                          {notif.title}
                         </span>
-                        <span style={{ fontSize: '10px', color: '#94a3b8', marginLeft: '8px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                          <FiClock size={10} /> {formatDate(req.createdAt)}
+                        <span style={{ fontSize: '10px', color: '#94a3b8', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                          <FiClock size={10} /> {formatDate(notif.createdAt)}
                         </span>
                       </div>
-                      <span style={{ fontSize: '11px', color: '#64748b' }}>
-                        {req.department || req.category}
-                      </span>
+                      <p style={{ fontSize: '11.5px', color: '#64748b', margin: 0, lineHeight: '1.4', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                        {notif.message}
+                      </p>
                     </button>
                   ))
                 )}
               </div>
 
               {/* Footer */}
-              {pendingRequests.length > 0 && (
+              {notifications.length > 0 && (
                 <div style={{ padding: '10px 18px', borderTop: '1px solid #f1f5f9' }}>
                   <button
                     style={{ width: '100%', background: 'none', border: 'none', color: '#4f46e5', fontWeight: 600, fontSize: '13px', cursor: 'pointer', padding: '4px 0' }}

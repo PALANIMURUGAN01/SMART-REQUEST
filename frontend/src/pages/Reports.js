@@ -16,24 +16,34 @@ export default function Reports() {
     async function fetchData() {
       try {
         setLoading(true);
-        let url = "http://localhost:5000/requests";
-        if (!isAdmin) {
-          if (user.role?.toLowerCase() === 'staff') {
-            url = `http://localhost:5000/assigned-requests/${user._id}`;
-          } else {
-            url = `http://localhost:5000/user-requests/${user._id}`;
+        let data = [];
+
+        if (isAdmin) {
+          // Admin: fetch all requests
+          const res = await fetch("http://localhost:5000/requests");
+          if (res.ok) data = await res.json();
+        } else if (user.role?.toLowerCase() === 'staff') {
+          // Staff: try assigned first, fallback to all
+          try {
+            const assignedRes = await fetch(`http://localhost:5000/assigned-requests/${user._id}`);
+            if (assignedRes.ok) data = await assignedRes.json();
+          } catch {
+            // ignore, will fallback
+          }
+          if (!data || data.length === 0) {
+            const allRes = await fetch("http://localhost:5000/requests");
+            if (allRes.ok) data = await allRes.json();
+          }
+        } else {
+          // Regular user: fetch their own requests
+          const res = await fetch(`http://localhost:5000/user-requests/${user._id}`);
+          if (res.ok) {
+            const result = await res.json();
+            data = result.requests || [];
           }
         }
 
-        const res = await fetch(url);
-        if (res.ok) {
-          const data = await res.json();
-          // Backend returns { stats, requests } for user-requests, but just [requests] for others
-          const fetchedRequests = (isAdmin || user.role?.toLowerCase() === 'staff') ? data : data.requests;
-          setRequests(fetchedRequests || []);
-        } else {
-          setError("Failed to fetch data for reports.");
-        }
+        setRequests(data || []);
       } catch (err) {
         console.error("Failed to fetch report data:", err);
         setError("Error connecting to server.");

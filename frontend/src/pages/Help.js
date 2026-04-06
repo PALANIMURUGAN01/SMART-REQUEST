@@ -97,9 +97,9 @@ export default function Help() {
   ];
 
   const contactMethods = [
-    { method: "Email", value: "support@srlm.com", icon: "📧" },
-    { method: "Phone", value: "+1-555-0123", icon: "📱" },
-    { method: "Live Chat", value: "Available 9 AM - 6 PM", icon: "💬" },
+    { method: "Admin Email", value: "admin@srlm.com", icon: "📧" },
+    { method: "Admin Phone", value: "04295-2260000", icon: "📞" },
+    { method: "Live Support", value: "Available 24x7 via Widget", icon: "💬" },
   ];
 
   const filteredFaqs = faqs.filter(
@@ -110,7 +110,7 @@ export default function Help() {
 
   return (
     <div className="container-fluid pt-4 pb-5 px-lg-5 animate-fade-in">
-      <div className="mx-auto" style={{ maxWidth: '1000px' }}>
+      <div className="mx-auto" style={{ maxWidth: '1140px' }}>
         <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3 border-bottom pb-4">
           <div>
             <h2 className="mb-1 fw-bold text-dark outfit-font" style={{ fontSize: '1.8rem' }}>Help & Support</h2>
@@ -204,45 +204,21 @@ export default function Help() {
             </div>
 
             <div className="row justify-content-center">
-              <div className="col-12">
-                <div className="clean-card overflow-hidden">
-                  <div className="card-header bg-white border-bottom-0 pt-4 pt-md-5 px-4 px-md-5 pb-0 d-flex flex-column align-items-center text-center">
-                    <div className="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle mb-3" style={{ width: "56px", height: "56px", fontSize: "24px" }}>
-                      💬
+              <div className="col-12 col-lg-10 col-xl-8">
+                <div className="clean-card overflow-hidden shadow-sm border-0 bg-primary bg-opacity-10 position-relative animate-up" style={{ border: "1px solid rgba(79, 70, 229, 0.2)" }}>
+                  <div className="card-body p-4 p-md-5 text-center px-lg-6">
+                    <div className="d-inline-flex align-items-center justify-content-center bg-white text-primary rounded-circle mb-3 shadow-sm" style={{ width: "64px", height: "64px" }}>
+                      <span className="fs-3 d-block" style={{ lineHeight: 1 }}>💬</span>
                     </div>
-                    <div>
-                      <h5 className="card-title fw-bold outfit-font mb-1 text-dark">Send us a Message</h5>
-                      <p className="text-muted small mb-0">Fill out the form below and our team will get back to you shortly.</p>
+                    <h4 className="fw-bold outfit-font mb-3 text-dark">Need Immediate Assistance?</h4>
+                    <p className="text-muted mb-4 mx-auto" style={{ fontSize: '15px', maxWidth: '500px' }}>
+                      We've upgraded our support experience! You can now chat with our real-time support team directly from anywhere in the application.
+                    </p>
+                    <div className="d-inline-flex bg-white px-4 py-3 rounded-pill shadow-sm align-items-center gap-2 border">
+                       <span className="fw-bold text-primary" style={{ fontSize: '14px' }}>
+                         Look for the blue chat icon at the bottom right ↓
+                       </span>
                     </div>
-                  </div>
-                  <div className="card-body p-4 p-md-5 pt-4">
-                    <form>
-                      <div className="row g-3 mb-3">
-                        <div className="col-md-6">
-                          <label className="form-label small fw-bold text-muted text-uppercase" style={{ letterSpacing: '0.05em', fontSize: '11px' }}>Your Name</label>
-                          <input type="text" className="form-control border-0 shadow-sm rounded-3 bg-light px-3 py-2" placeholder="John Doe" />
-                        </div>
-                        <div className="col-md-6">
-                          <label className="form-label small fw-bold text-muted text-uppercase" style={{ letterSpacing: '0.05em', fontSize: '11px' }}>Email Address</label>
-                          <input type="email" className="form-control border-0 shadow-sm rounded-3 bg-light px-3 py-2" placeholder="john@example.com" />
-                        </div>
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label small fw-bold text-muted text-uppercase" style={{ letterSpacing: '0.05em', fontSize: '11px' }}>Subject</label>
-                        <input type="text" className="form-control border-0 shadow-sm rounded-3 bg-light px-3 py-2" placeholder="How can we help?" />
-                      </div>
-                      <div className="mb-4">
-                        <label className="form-label small fw-bold text-muted text-uppercase" style={{ letterSpacing: '0.05em', fontSize: '11px' }}>Message Details</label>
-                        <textarea
-                          className="form-control border-0 shadow-sm rounded-3 bg-light px-3 py-3"
-                          rows="5"
-                          placeholder="Please describe your issue or inquiry in detail..."
-                        ></textarea>
-                      </div>
-                      <button type="submit" className="btn grad-indigo w-100 fw-bold rounded-3 shadow border-0 py-2 d-flex justify-content-center align-items-center gap-2">
-                        <span>📧</span> Send Message
-                      </button>
-                    </form>
                   </div>
                 </div>
               </div>
@@ -255,7 +231,7 @@ export default function Help() {
           <div className="animate-fade-in">
             {/* Guide Cards Row */}
             <div className="row g-4 mb-4 justify-content-center">
-              <div className="col-md-6">
+              <div className="col-12 col-lg-6">
                 <div className="clean-card h-100 card-interactive card-accent-indigo">
                   <div className="card-body d-flex flex-column p-4 p-lg-5">
                     <div className="d-flex align-items-center mb-3">
@@ -268,7 +244,7 @@ export default function Help() {
                       New to SRLM? A complete step-by-step guide to creating, tracking, and managing your requests seamlessly.
                     </p>
                     <button
-                      className="btn grad-indigo text-white mt-4 fw-bold rounded-3 shadow align-self-start px-4 py-2 border-0"
+                      className="btn btn-primary mt-4 fw-medium rounded-3 shadow-sm align-self-start px-4 py-2 border-0"
                       onClick={() => navigate("/help/guide/getting-started")}
                     >
                       Read Guide →
@@ -276,7 +252,7 @@ export default function Help() {
                   </div>
                 </div>
               </div>
-              <div className="col-md-6">
+              <div className="col-12 col-lg-6">
                 <div className="clean-card h-100 card-interactive card-accent-emerald">
                   <div className="card-body d-flex flex-column p-4 p-lg-5">
                     <div className="d-flex align-items-center mb-3">
@@ -289,8 +265,7 @@ export default function Help() {
                       Tips and tricks for writing effective requests, providing the right details, and getting faster, more accurate resolutions.
                     </p>
                     <button
-                      className="btn btn-success mt-4 fw-bold rounded-3 shadow align-self-start px-4 py-2 border-0"
-                      style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
+                      className="btn btn-success mt-4 fw-medium rounded-3 shadow-sm align-self-start px-4 py-2 border-0"
                       onClick={() => navigate("/help/guide/best-practices")}
                     >
                       Read Guide →

@@ -238,7 +238,7 @@ export default function MyRequests() {
               <div className="row g-2 mb-3">
                 <div className="col-sm-4"><small className="text-muted">Category</small><div>{activeRequest.category || '-'}</div></div>
                 <div className="col-sm-4"><small className="text-muted">Created</small><div>{formatDate(activeRequest.createdAt)}</div></div>
-                <div className="col-sm-4"><small className="text-muted">Assigned To</small><div>{activeRequest.assignedTo || '-'}</div></div>
+                <div className="col-sm-4"><small className="text-muted">Assigned To</small><div>{typeof activeRequest.assignedTo === 'object' ? (activeRequest.assignedTo?.name || '-') : (activeRequest.assignedTo || '-')}</div></div>
               </div>
 
               <div>

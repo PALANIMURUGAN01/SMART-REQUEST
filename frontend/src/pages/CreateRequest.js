@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiEdit3, FiLayers, FiAlertCircle, FiFileText, FiUpload, FiSend, FiXCircle, FiCheckCircle } from "react-icons/fi";
+import { DEPARTMENTS } from "../constants/departments";
 
 export default function CreateRequest() {
   const [title, setTitle] = useState("");
-  const [department, setDepartment] = useState("Institute");
+  const [department, setDepartment] = useState(DEPARTMENTS[0]);
   const [priority, setPriority] = useState("Low");
   const [description, setDescription] = useState("");
   const [file, setFile] = useState(null);
@@ -130,11 +131,9 @@ export default function CreateRequest() {
                     onChange={(ev) => setDepartment(ev.target.value)}
                     disabled={submitting}
                   >
-                    <option value="Institute">Institute</option>
-                    <option value="Hardware">Hardware</option>
-                    <option value="Software">Software</option>
-                    <option value="Network">Network</option>
-                    <option value="Maintenance">Maintenance</option>
+                    {DEPARTMENTS.map(dept => (
+                      <option key={dept} value={dept}>{dept}</option>
+                    ))}
                   </select>
                 </div>
               </div>

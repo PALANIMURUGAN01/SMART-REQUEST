@@ -1,0 +1,29 @@
+﻿[dotenv@17.2.3] injecting env (6) from .env -- tip: ΓÜÖ∩╕Å  enable debug logging with { debug: true }
+[
+  {
+    "permissions": {
+      "canView": true,
+      "canEdit": true
+    },
+    "preferences": {
+      "statusColors": {
+        "pending": "warning",
+        "in progress": "info",
+        "resolved": "success",
+        "rejected": "danger"
+      },
+      "theme": "light",
+      "notifications": true,
+      "emailAlerts": true,
+      "soundAlerts": false
+    },
+    "_id": "69c16cfb628fe342b79b5978",
+    "name": "STAFF",
+    "email": "staffec@bit.com",
+    "password": "1234",
+    "role": "staff",
+    "__v": 0,
+    "phone": "8956457812",
+    "department": "ECE"
+  }
+]

@@ -87,133 +87,108 @@ export default function Login() {
   return (
     <div className="auth-bg">
       <TermsModal show={showTerms} onClose={() => setShowTerms(false)} />
-      <div className="card shadow-lg border-0 overflow-hidden" style={{ width: "100%", maxWidth: "900px", minHeight: "600px" }}>
-        <div className="row g-0 h-100">
-          {/* Left Side - Hero Section */}
-          <div className="col-md-5 d-none d-md-flex flex-column justify-content-center align-items-center text-white p-5 grad-indigo">
-            <div className="mb-4 bg-white bg-opacity-25 rounded-circle p-4">
-              <FiCpu size={64} color="white" />
-            </div>
-            <h2 className="fw-bold mb-3 outfit-font">Welcome Back!</h2>
-            <p className="text-center opacity-75 fs-5">
-              Securely manage your requests with SRLM Modern Dashboard.
-            </p>
-            <div className="mt-5 d-flex gap-3 text-white-50">
-              <div className="d-flex align-items-center gap-2">
-                <FiCheckCircle size={20} />
-                <span>Secure</span>
-              </div>
-              <div className="d-flex align-items-center gap-2">
-                <FiCheckCircle size={20} />
-                <span>Fast</span>
-              </div>
-            </div>
+      <div className="auth-card animate-up">
+        <div className="text-center mb-4">
+          <div className="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle mb-3" style={{ width: "64px", height: "64px" }}>
+            <FiCpu size={30} />
           </div>
+          <h3 className="fw-bold text-dark mb-1 outfit-font">Welcome Back</h3>
+          <p className="text-muted small">Log in to continue to SRLM Dashboard</p>
+        </div>
 
-          {/* Right Side - Login Form */}
-          <div className="col-md-7 bg-white p-5">
-            <div className="d-flex align-items-center justify-content-between mb-5">
-              <h3 className="fw-bold text-dark mb-0 outfit-font">Login</h3>
-              <span className="badge bg-light text-primary border rounded-pill px-3 py-2 fw-semibold">SRLM v2.1</span>
-            </div>
+        {/* General Error */}
+        {errors.general && (
+          <div className="alert alert-danger alert-dismissible fade show small py-2 d-flex align-items-center" role="alert">
+            <div className="flex-grow-1">{errors.general}</div>
+            <button
+              type="button"
+              className="btn-close btn-close-sm position-relative"
+              style={{ padding: "0" }}
+              onClick={() => setErrors({ ...errors, general: "" })}
+            ></button>
+          </div>
+        )}
 
-            {/* General Error */}
-            {errors.general && (
-              <div className="alert alert-danger alert-dismissible fade show" role="alert">
-                {errors.general}
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setErrors({ ...errors, general: "" })}
-                />
-              </div>
-            )}
-
-            {/* Form */}
-            <form onSubmit={handleLogin} noValidate>
-              <div className="mb-4">
-                <label className="form-label text-secondary small fw-bold">EMAIL ADDRESS</label>
-                <div className="input-group">
-                  <span className="input-group-text bg-light border-end-0 text-muted"><FiMail /></span>
-                  <input
-                    type="email"
-                    className={`form-control bg-light border-0 shadow-sm ${errors.email ? "is-invalid" : ""}`}
-                    placeholder="name@company.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={loading}
-                    style={{ height: "48px", paddingLeft: "15px" }}
-                  />
-                </div>
-                {errors.email && <div className="text-danger small mt-1">{errors.email}</div>}
-              </div>
-
-              <div className="mb-4">
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <label className="form-label text-secondary small fw-bold">PASSWORD</label>
-                  <Link to="/forgot-password" className="text-primary text-decoration-none small fw-bold">Forgot?</Link>
-                </div>
-                <div className="input-group">
-                  <span className="input-group-text bg-light border-end-0 text-muted"><FiLock /></span>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    className={`form-control bg-light border-0 shadow-sm ${errors.password ? "is-invalid" : ""}`}
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={loading}
-                    style={{ height: "48px", paddingLeft: "15px" }}
-                  />
-                  <button
-                    type="button"
-                    className="input-group-text bg-light border-0 text-muted"
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
-                  </button>
-                </div>
-                {errors.password && <div className="text-danger small mt-1">{errors.password}</div>}
-              </div>
-
-              <div className="d-grid gap-2 mb-4">
-                <button
-                  type="submit"
-                  className="btn grad-indigo fw-bold text-uppercase py-3 shadow-md rounded-3 border-0"
-                  disabled={loading}
-                >
-                  {loading ? "Signing In..." : "Log In"}
-                </button>
-              </div>
-            </form>
-
-            <div className="position-relative text-center mb-4">
-              <hr className="text-muted opacity-25" />
-              <span className="position-absolute top-50 start-50 translate-middle px-3 bg-white text-muted small">OR</span>
-            </div>
-
-            <div className="d-flex justify-content-center">
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={handleGoogleError}
-                useOneTap
-                theme="outline"
-                size="large"
-                text="continue_with"
-                shape="rectangular"
-                width="100%"
+        {/* Form */}
+        <form onSubmit={handleLogin} noValidate>
+          <div className="mb-3">
+            <label className="form-label text-secondary small fw-bold">Email Address</label>
+            <div className={`input-group rounded-3 overflow-hidden ${errors.email ? 'border border-danger' : 'border'}`} style={{ borderColor: "var(--border-color)" }}>
+              <span className="input-group-text bg-white border-0 text-muted ps-3 pe-2"><FiMail size={18} /></span>
+              <input
+                type="email"
+                className="form-control border-0 shadow-none ps-2"
+                placeholder="name@company.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
+                style={{ height: "48px", backgroundColor: "white" }}
               />
             </div>
-
-            <div className="text-center mt-4">
-              <p className="text-muted small mb-2">
-                Don't have an account? <Link to="/signup" className="text-primary text-decoration-none fw-bold">Sign up</Link>
-              </p>
-              <div className="small text-muted">
-                <a href="#terms" className="text-decoration-none text-muted" onClick={(e) => { e.preventDefault(); setShowTerms(true); }}>Terms & Conditions</a>
-              </div>
-            </div>
+            {errors.email && <div className="text-danger small mt-1">{errors.email}</div>}
           </div>
+
+          <div className="mb-4">
+            <div className="d-flex justify-content-between align-items-center mb-1">
+              <label className="form-label text-secondary small fw-bold mb-0">Password</label>
+              <Link to="/forgot-password" className="text-primary text-decoration-none small fw-medium">Forgot Password?</Link>
+            </div>
+            <div className={`input-group rounded-3 overflow-hidden ${errors.password ? 'border border-danger' : 'border'}`} style={{ borderColor: "var(--border-color)" }}>
+              <span className="input-group-text bg-white border-0 text-muted ps-3 pe-2"><FiLock size={18} /></span>
+              <input
+                type={showPassword ? "text" : "password"}
+                className="form-control border-0 shadow-none ps-2"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+                style={{ height: "48px", backgroundColor: "white" }}
+              />
+              <button
+                type="button"
+                className="input-group-text bg-white border-0 text-muted pe-3 ps-2"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{ cursor: "pointer" }}
+              >
+                {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+              </button>
+            </div>
+            {errors.password && <div className="text-danger small mt-1">{errors.password}</div>}
+          </div>
+
+          <button
+            type="submit"
+            className="btn btn-primary w-100 fw-medium mb-3 rounded-3"
+            style={{ height: "48px", fontSize: "15px", boxShadow: "0 4px 6px -1px rgba(79, 70, 229, 0.2)" }}
+            disabled={loading}
+          >
+            {loading ? "Signing in..." : "Log in"}
+          </button>
+        </form>
+
+        <div className="position-relative text-center my-4">
+          <hr className="text-muted opacity-25" />
+          <span className="position-absolute top-50 start-50 translate-middle px-3 text-muted small fw-medium" style={{ fontSize: "0.75rem", backgroundColor: "var(--card-bg)" }}>OR CONTINUE WITH</span>
+        </div>
+
+        <div className="d-flex justify-content-center mb-4">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+            useOneTap
+            theme="outline"
+            size="large"
+            text="continue_with"
+            shape="rectangular"
+            width="100%"
+          />
+        </div>
+
+        <div className="text-center mt-3">
+          <p className="text-muted small mb-1">
+            Don't have an account? <Link to="/signup" className="text-primary text-decoration-none fw-medium">Sign up</Link>
+          </p>
+          <a href="#terms" className="text-decoration-none text-muted small" onClick={(e) => { e.preventDefault(); setShowTerms(true); }}>Terms & Conditions</a>
         </div>
       </div>
     </div>

@@ -19,6 +19,7 @@ import MyRequests from "./pages/MyRequests";
 import AdminPanel from "./pages/AdminPanel";
 import StaffDashboard from "./pages/StaffDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
+import FloatingChat from "./components/FloatingChat";
 
 function AppContent() {
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 992);
@@ -77,6 +78,9 @@ function AppContent() {
           </Routes>
         </div>
       </div>
+
+      {/* Global Floating Chat Widget */}
+      {!isAuthPage && <FloatingChat />}
     </div>
   );
 }

@@ -178,10 +178,10 @@ export default function Dashboard() {
                     </td>
                   </tr>
                 ) : (
-                  [...requests].slice(-5).map((req) => (
+                  [...requests].sort((a, b) => (b.requestId || 0) - (a.requestId || 0)).slice(0, 5).map((req) => (
                     <tr key={req._id} className="row-interactive cursor-pointer" onClick={() => openDetails(req)}>
                       <td className="ps-4">
-                        <span className="fw-bold text-primary">#{req.requestId}</span>
+                        <span className="fw-bold text-primary">{req.requestId}</span>
                       </td>
                       <td>
                         <div className="fw-semibold text-dark">{req.title}</div>

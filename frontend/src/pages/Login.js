@@ -180,7 +180,7 @@ export default function Login() {
             size="large"
             text="continue_with"
             shape="rectangular"
-            width="100%"
+            width="320"
           />
         </div>
 

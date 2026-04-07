@@ -22,7 +22,7 @@ const { sendAdminNotification, sendUserNotification, sendStatusNotification, sen
 
 const app = express();
 
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || "http://localhost:3001").split(",").map(o => o.trim());
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || "http://localhost:3000, http://localhost:3001, https://smart-request-f6i8.onrender.com, https://smart-request.onrender.com").split(",").map(o => o.trim());
 console.log(`🚀 CORS Enabled for: ${allowedOrigins.join(", ")}`);
 
 app.use(cors({
@@ -313,13 +313,14 @@ app.post("/requests", upload.single("file"), async (req, res) => {
       }
     }
 
+    const baseUrl = process.env.BACKEND_URL || `${req.protocol}://${req.get('host')}`;
     const requestData = {
       ...req.body,
       createdBy,
       requestId: counter.seq,
       category: deptValue,
       department: deptValue,
-      attachmentUrl: req.file ? `http://localhost:5000/uploads/${req.file.filename}` : null
+      attachmentUrl: req.file ? `${baseUrl}/uploads/${req.file.filename}` : null
     };
 
     const newRequest = new Request(requestData);

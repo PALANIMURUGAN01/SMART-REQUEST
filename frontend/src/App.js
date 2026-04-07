@@ -27,10 +27,6 @@ function AppContent() {
   const isAuthPage = location.pathname === "/" || location.pathname === "/signup" || location.pathname === "/forgot-password";
 
   useEffect(() => {
-    // Force Light Mode
-    document.documentElement.setAttribute("data-theme", "light");
-    localStorage.setItem("theme", "light");
-
     const handleResize = () => {
       if (window.innerWidth >= 992) {
         setSidebarOpen(true);
@@ -55,7 +51,7 @@ function AppContent() {
       <div
         className="content-transition"
         style={{
-          marginLeft: !isAuthPage && window.innerWidth >= 992 ? 280 : 0,
+          marginLeft: !isAuthPage && window.innerWidth >= 992 ? 260 : 0,
         }}
       >
         <div className={isAuthPage ? "auth-container" : "main-content"}>
@@ -86,7 +82,7 @@ function AppContent() {
 }
 
 function App() {
-  const clientId = "756289965570-8pu7rjkq252b1gns1na0ni9jrt0ucsc9.apps.googleusercontent.com"; // Updated with actual Client ID
+  const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID || "756289965570-8pu7rjkq252b1gns1na0ni9jrt0ucsc9.apps.googleusercontent.com";
 
   return (
     <GoogleOAuthProvider clientId={clientId}>

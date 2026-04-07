@@ -1,3 +1,6 @@
+// Override DNS to use Google DNS - fixes Atlas SRV lookup on restricted networks
+require('dns').setServers(['8.8.8.8', '8.8.4.4']);
+
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
@@ -19,7 +22,22 @@ const { sendAdminNotification, sendUserNotification, sendStatusNotification, sen
 
 const app = express();
 
-app.use(cors());
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || "http://localhost:3001").split(",").map(o => o.trim());
+console.log(`🚀 CORS Enabled for: ${allowedOrigins.join(", ")}`);
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  methods: ["GET", "POST", "PATCH", "DELETE", "PUT"],
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -42,7 +60,7 @@ app.use((req, res, next) => {
 });
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI || "mongodb://localhost:27017/mini2_db")
+mongoose.connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 15000 })
   .then(async () => {
     console.log("MongoDB connected 🚀");
 
@@ -410,7 +428,9 @@ app.patch("/requests/:id", async (req, res) => {
         user.name,
         updatedRequest.title,
         updatedRequest.requestId,
-        updateData.status
+        updateData.status,
+        updateData.rejectionReason,
+        updateData.resolutionMessage
       );
 
       // Create In-App Notification for User
@@ -481,7 +501,7 @@ app.get("/requests/:id/quick-approve", async (req, res) => {
           <h2>Request #${updatedRequest.requestId} Approved!</h2>
           <p>The request "<strong>${updatedRequest.title}</strong>" has been successfully approved.</p>
           <p style="font-size: 13px;">An email notification has been sent to the user.</p>
-          <a href="http://localhost:3000/admin">Go to Dashboard</a>
+          <a href="${process.env.FRONTEND_URL || 'http://localhost:3001'}/admin">Go to Dashboard</a>
         </div>
       </body>
       </html>
@@ -535,7 +555,7 @@ app.get("/requests/:id/quick-reject", async (req, res) => {
           <h2>Request #${updatedRequest.requestId} Rejected</h2>
           <p>The request "<strong>${updatedRequest.title}</strong>" has been rejected.</p>
           <p style="font-size: 13px;">The user has been notified via email.</p>
-          <a href="http://localhost:3000/admin">Go to Dashboard</a>
+          <a href="${process.env.FRONTEND_URL || 'http://localhost:3001'}/admin">Go to Dashboard</a>
         </div>
       </body>
       </html>
@@ -672,7 +692,7 @@ app.get("/assigned-requests/:staffId", async (req, res) => {
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: allowedOrigins,
     methods: ["GET", "POST"]
   }
 });
@@ -771,9 +791,19 @@ app.get("/chats/all", async (req, res) => {
 // --- Notification Routes ---
 app.get("/notifications/:userId", async (req, res) => {
   try {
-    const notifications = await Notification.find({ recipient: req.params.userId })
+    const { userId } = req.params;
+    const user = await User.findById(userId);
+    
+    let query = { recipient: userId };
+    
+    // If Admin, let them see EVERYTHING in the system (all activity)
+    if (user && user.role?.toLowerCase() === 'admin') {
+      query = {}; // All notifications
+    }
+    
+    const notifications = await Notification.find(query)
       .sort({ createdAt: -1 })
-      .limit(20);
+      .limit(30);
     res.json(notifications);
   } catch (err) {
     res.status(500).json({ error: err.message });

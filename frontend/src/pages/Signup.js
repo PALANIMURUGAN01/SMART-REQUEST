@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { FiUser, FiMail, FiLock, FiEye, FiEyeOff, FiCheckCircle, FiCpu } from "react-icons/fi";
-import { FcGoogle } from "react-icons/fc";
+import { FiUser, FiMail, FiLock, FiEye, FiEyeOff, FiCpu } from "react-icons/fi";
 import { GoogleLogin } from "@react-oauth/google";
 import TermsModal from "../components/TermsModal";
+import { API_URL } from "../config";
 
 export default function Signup() {
   const [fullName, setFullName] = useState("");
@@ -60,7 +60,7 @@ export default function Signup() {
 
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/register", {
+      const res = await fetch(`${API_URL}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -85,7 +85,7 @@ export default function Signup() {
   async function handleGoogleSuccess(credentialResponse) {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/auth/google", {
+      const res = await fetch(`${API_URL}/auth/google`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ credential: credentialResponse.credential }),

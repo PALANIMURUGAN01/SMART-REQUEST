@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { FiMessageSquare, FiX, FiSend } from 'react-icons/fi';
 import { io } from 'socket.io-client';
+import { API_URL, SOCKET_URL } from "../config";
 
 export default function FloatingChat() {
   const [isOpen, setIsOpen] = useState(false);
@@ -9,18 +10,18 @@ export default function FloatingChat() {
   const [socket, setSocket] = useState(null);
   const messagesEndRef = useRef(null);
 
-  const userObj = (() => {
+  const [userObj] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem("user") || "null");
     } catch {
       return null;
     }
-  })();
+  });
 
   useEffect(() => {
-    if (!userObj) return;
+    if (!userObj?._id) return;
 
-    const newSocket = io("http://localhost:5000");
+    const newSocket = io(SOCKET_URL || API_URL);
     setSocket(newSocket);
 
     newSocket.on("connect", () => {
@@ -32,7 +33,7 @@ export default function FloatingChat() {
     });
 
     // Fetch initial chat history
-    fetch(`http://localhost:5000/chat/${userObj._id}`)
+    fetch(`${API_URL}/chat/${userObj._id}`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) setMessages(data);

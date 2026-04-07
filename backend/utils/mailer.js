@@ -29,7 +29,7 @@ exports.sendAdminNotification = async (userEmail, messageText) => {
               "${messageText}"
             </div>
             <div style="text-align: center; margin-top: 25px;">
-              <a href="http://localhost:3000/admin" style="background-color: #4f46e5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px; display: inline-block;">
+              <a href="${process.env.FRONTEND_URL || 'http://localhost:3001'}/admin" style="background-color: #4f46e5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px; display: inline-block;">
                 Reply in Dashboard
               </a>
             </div>
@@ -62,7 +62,7 @@ exports.sendUserNotification = async (userEmail, messageText) => {
               "${messageText}"
             </div>
             <div style="text-align: center; margin-top: 25px;">
-              <a href="http://localhost:3000/dashboard" style="background-color: #4f46e5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px; display: inline-block;">
+              <a href="${process.env.FRONTEND_URL || 'http://localhost:3001'}/dashboard" style="background-color: #4f46e5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px; display: inline-block;">
                 Open Chat Room
               </a>
             </div>
@@ -75,7 +75,7 @@ exports.sendUserNotification = async (userEmail, messageText) => {
   }
 };
 
-exports.sendStatusNotification = async (userEmail, userName, requestTitle, requestId, newStatus) => {
+exports.sendStatusNotification = async (userEmail, userName, requestTitle, requestId, newStatus, rejectionReason = null, resolutionMessage = null) => {
   try {
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) return;
     if (!userEmail) return;
@@ -97,7 +97,7 @@ exports.sendStatusNotification = async (userEmail, userName, requestTitle, reque
 
     const accentColor = statusColors[newStatus] || '#6366f1';
     const message = statusMessages[newStatus] || `The status of your request "${requestTitle}" was updated to: ${newStatus}.`;
-    const dashboardLink = `http://localhost:3000/my-requests`;
+    const dashboardLink = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/my-requests`;
 
     await transporter.sendMail({
       from: `"SRLM Support" <${process.env.EMAIL_USER}>`,
@@ -116,6 +116,18 @@ exports.sendStatusNotification = async (userEmail, userName, requestTitle, reque
           <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid ${accentColor};">
             <p style="margin: 0 0 10px 0; color: #64748b; font-size: 13px; text-transform: uppercase; font-weight: bold;">Request Details</p>
             <p style="margin: 0; color: #1e293b; font-size: 16px;"><strong>#${requestId}</strong>: ${requestTitle}</p>
+            ${rejectionReason ? `
+              <div style="margin-top: 15px; padding: 12px; background: #fee2e2; border-radius: 6px; border: 1px solid #fecaca; color: #991b1b; font-size: 14px;">
+                <strong>Reason for Rejection:</strong><br>
+                ${rejectionReason}
+              </div>
+            ` : ''}
+            ${resolutionMessage ? `
+              <div style="margin-top: 15px; padding: 12px; background: #dcfce7; border-radius: 6px; border: 1px solid #bbf7d0; color: #166534; font-size: 14px;">
+                <strong>Resolution Details:</strong><br>
+                ${resolutionMessage}
+              </div>
+            ` : ''}
           </div>
 
           <p style="color: #475569; line-height: 1.6; font-size: 16px;">
@@ -179,7 +191,7 @@ exports.sendNewRequestAdminAlert = async (requestTitle, requestDesc, requestId, 
           </div>
 
           <p style="margin-top: 35px; font-size: 12px; color: #94a3b8; border-top: 1px solid #f1f5f9; pt: 15px;">
-            Or log in to the <a href="http://localhost:3000/admin" style="color: #4f46e5;">Admin Dashboard</a> to manage all requests.
+            Or log in to the <a href="${process.env.FRONTEND_URL || 'http://localhost:3001'}/admin" style="color: #4f46e5;">Admin Dashboard</a> to manage all requests.
           </p>
         </div>
       `

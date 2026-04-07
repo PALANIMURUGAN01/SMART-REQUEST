@@ -1,0 +1,26 @@
+{
+  "name": "mini2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently -n \"BACKEND,FRONTEND\" -c \"bgBlue.white,bgGreen.white\" \"npm run backend\" \"npm run frontend\"",
+    "backend": "cd backend && npm start",
+    "frontend": "cd frontend && npm start"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PALANIMURUGAN01/SRLM.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/PALANIMURUGAN01/SRLM/issues"
+  },
+  "homepage": "https://github.com/PALANIMURUGAN01/SRLM#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

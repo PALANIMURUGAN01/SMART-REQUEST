@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 import { FiMessageSquare, FiSend } from "react-icons/fi";
+import { API_URL } from "../config";
 
 export default function AdminChatDesk() {
   const [chats, setChats] = useState([]);
@@ -12,7 +13,7 @@ export default function AdminChatDesk() {
 
   // Poll chats or wait for socket updates
   const fetchChats = () => {
-    fetch("http://localhost:5000/chats/all")
+    fetch(`${API_URL}/chats/all`)
       .then(res => res.json())
       .then(data => {
         setChats(data);
@@ -31,7 +32,7 @@ export default function AdminChatDesk() {
   useEffect(() => {
     fetchChats();
 
-    const newSocket = io("http://localhost:5000");
+    const newSocket = io(`${API_URL}`);
     setSocket(newSocket);
 
     newSocket.on("receiveMessage", (msg) => {

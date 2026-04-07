@@ -6,6 +6,7 @@ import {
   FiBell, FiGrid, FiChevronDown, FiClock, FiCheckSquare
 } from "react-icons/fi";
 import { io } from "socket.io-client";
+import { API_URL } from "../config";
 
 export default function Navbar({ onToggleSidebar }) {
   const [dateTime, setDateTime] = useState(new Date());
@@ -17,8 +18,7 @@ export default function Navbar({ onToggleSidebar }) {
   const profileRef = useRef(null);
   const notifRef = useRef(null);
   const navigate = useNavigate();
-
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const [user] = useState(() => JSON.parse(localStorage.getItem('user') || '{}'));
   const initials = user.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U';
 
   function handleLogout() {
@@ -51,7 +51,7 @@ export default function Navbar({ onToggleSidebar }) {
     // 1. Fetch initial notifications
     const fetchNotifications = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/notifications/${user._id}`);
+        const res = await fetch(`${API_URL}/notifications/${user._id}`);
         if (res.ok) {
           const data = await res.json();
           setNotifications(data);
@@ -65,7 +65,7 @@ export default function Navbar({ onToggleSidebar }) {
     fetchNotifications();
 
     // 2. Setup Socket.io
-    socketRef.current = io("http://localhost:5000");
+    socketRef.current = io(`${API_URL}`);
     socketRef.current.emit("joinRoom", { userId: user._id });
 
     socketRef.current.on("newNotification", (notif) => {
@@ -85,7 +85,7 @@ export default function Navbar({ onToggleSidebar }) {
 
   const markAsRead = async (id) => {
     try {
-      await fetch(`http://localhost:5000/notifications/${id}/read`, { method: 'PATCH' });
+      await fetch(`${API_URL}/notifications/${id}/read`, { method: 'PATCH' });
       setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (err) { }
@@ -93,7 +93,7 @@ export default function Navbar({ onToggleSidebar }) {
 
   const markAllAsRead = async () => {
     try {
-      await fetch(`http://localhost:5000/notifications/read-all/${user._id}`, { method: 'PATCH' });
+      await fetch(`${API_URL}/notifications/read-all/${user._id}`, { method: 'PATCH' });
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       setUnreadCount(0);
     } catch (err) { }
@@ -142,6 +142,7 @@ export default function Navbar({ onToggleSidebar }) {
           <span style={{ fontSize: '13px', fontWeight: 600, color: '#1e293b' }}>{timeStr}</span>
           <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 500 }}>{dateStr}</span>
         </div>
+
 
         {/* Notification Bell */}
         <div style={{ position: 'relative' }} ref={notifRef}>
@@ -244,7 +245,7 @@ export default function Navbar({ onToggleSidebar }) {
         {/* Profile */}
         <div style={{ position: 'relative' }} ref={profileRef}>
           <button
-            style={{ background: 'none', border: 'none', padding: '0', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', borderRadius: '10px', padding: '4px 8px 4px 4px', transition: 'background 0.15s' }}
+            style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', borderRadius: '10px', padding: '4px 8px 4px 4px', transition: 'background 0.15s' }}
             onClick={() => { setShowProfile(v => !v); setShowNotifications(false); }}
             aria-label="Profile"
           >

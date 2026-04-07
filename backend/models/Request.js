@@ -38,8 +38,14 @@ const requestSchema = new mongoose.Schema({
     resolvedAt: {
         type: Date
     },
+    resolutionMessage: {
+        type: String
+    },
     rejectedAt: {
         type: Date
+    },
+    rejectionReason: {
+        type: String
     },
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
